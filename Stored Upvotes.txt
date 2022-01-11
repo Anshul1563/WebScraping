@@ -1,0 +1,1 @@
+Day 1 > Data={'AskReddit': 28906, 'memes': 38685, 'gaming': 51493, 'funny': 68524, 'news': 30868, 'wallstreetbets': 64496, 'unexpected': 28757, 'pics': 74895, 'damnthatsinteresting': 81105, 'movies': 15867}
