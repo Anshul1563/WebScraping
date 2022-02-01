@@ -10,6 +10,11 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 from app import app
 
+from wordcloud import WordCloud,STOPWORDS
+from dash.exceptions import PreventUpdate
+import re
+import cv2 
+
 reddit = praw.Reddit(
     client_id="wBlYlJ7XtNtL0d1fEAj-vg",
     client_secret="muW07OSaCr5I4Dj23Sn7HeFeoifSLg",
@@ -38,9 +43,32 @@ def pie():
     df = pd.DataFrame(flairs.items(),columns=['Topic','Count'])
     return df
 #-------------------------------------------------------------------------------
+def wordcld(sub,n):
+        subreddit = reddit.subreddit(sub)
+        sub_title = []
+        for submission in subreddit.new(limit = n):
+            sub_title.append(submission.title)
+        y = []
+        for x in sub_title:
+            x = x.lower()
+            y.append(x)
+        s = set(STOPWORDS)
+        my_file = open("verbsList.txt", "r")
+        content = my_file.read()
+        ar = content.split("\n")
+        my_file.close()
+        s.update(ar)
+        my_file = open("verbs-all.txt", "r")
+        content = my_file.read()
+        ar =re.split('\t|\n', content)
+        my_file.close()
+        s.update(ar)
+        wordcloud = WordCloud(width = 1200, height = 600, stopwords= s, max_font_size = 200,background_color = 'white', colormap = 'viridis')
+        wordcloud = wordcloud.generate(' '.join(y))
+        img = wordcloud.to_file('work.png')
+        df3 = cv2.imread('work.png')
+        return df3
 
-#df=scatt(4,'memes','damnthatsinteresting','gaming','unexpected')
-#print(df)
 #-------------------------------------------------------------------------------
 #app = dash.Dash(__name__,external_stylesheets=[dbc.themes.BOOTSTRAP])
 #-------------------------------------------------------------------------------
@@ -120,7 +148,40 @@ form = dbc.Row(
     ],
     className="g-3",
 )
-
+#-------------------------------------------------------------------------------
+form1 = dbc.Row(
+    [
+        dbc.Col(
+            [
+                #dbc.Label("Email", html_for="example-email-grid"),
+                dbc.Input(
+                    type="text",
+                    id="subreddit1",
+                    value=None,
+                    placeholder="Enter subreddit",
+                ),
+            ],
+            width=3,
+        ),
+        dbc.Col(
+            [
+                #dbc.Label("Password", html_for="example-password-grid"),
+                dbc.Input(
+                    type="number",
+                    id="num1",
+                    value=100,
+                    min=100,
+                    max=200,
+                    step=1
+                ),
+            ],
+            width=3,
+        ),
+        dbc.Col(dbc.Button("Submit", color="primary",id='submit1'), width="auto"),
+    ],
+    className="g-3",
+)
+#-------------------------------------------------------------------------------
 table_header = [
     html.Thead(html.Tr([html.Th("Subreddits")]))
 ]
@@ -133,7 +194,7 @@ table = dbc.Table(table_header + table_body,
                   hover=True,
                   responsive=True,
                   striped=True,)
-#--------------------------------------------------
+#-------------------------------------------------------------------------------
 layout = html.Div([
     dbc.Container(navbar, fluid=True),
     html.Br(),
@@ -145,6 +206,10 @@ layout = html.Div([
     dbc.Button("Generate graph", color="success", size="lg", id='load', className="me-1"),
     dcc.Graph(id='award_upvotes',className='g20'),
     dcc.Graph(id='pie',className='g21'),
+    html.Br(),
+    dbc.Container(form1, fluid=True),
+    html.Br(),
+    dcc.Graph(id='wordel',className='g22')
 ],className='app2')
 
 @app.callback(
@@ -162,13 +227,22 @@ def input_collector(clicks,subred):
     #return s
     return l_dec
     
-'''
 @app.callback(
-    Output(component_id='hello', component_property='children'),
-    Input('load','n_clicks'))
-def gen(click):
-    return l[1]
-'''
+    Output(component_id='wordel', component_property='figure'),
+    Input('submit1','n_clicks'),
+    State(component_id='subreddit1', component_property='value'),
+    State(component_id='num1', component_property='value'))
+def word(click,sub,num):
+    if sub is None :
+        raise PreventUpdate
+    else:
+        df3 = wordcld(sub,num)
+        fig = px.imshow(df3)        
+        fig.update_layout(title_text='Commonly used words',title_x=0.5)
+        fig.update_xaxes(visible=False)    
+        fig.update_yaxes(visible=False)
+        return fig
+
 
 
 
